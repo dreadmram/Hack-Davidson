@@ -4,6 +4,9 @@ import tkinter as tk
 from tkinter import messagebox
 import matplotlib.pyplot as plt
 import csv
+import calendar
+import datetime
+
 
 # Sample motivational quotes
 quotes = {
@@ -143,11 +146,40 @@ def export_to_csv():
         writer.writerows(data)
     messagebox.showinfo("Export Successful", "Data exported to 'fitness_data.csv' successfully!")
 
+# Reward function (could be points, badges, etc.)
+
+
 # Function to clear all entries
 def clear_entries():
     save_data([])
     lb_entries.delete(0, tk.END)
     messagebox.showinfo("Clear Successful", "All entries cleared.")
+achievements = {
+    "steps_10000": {
+        "name": "10,000 Steps in a Day",
+        "description": "Complete 10,000 steps in a single day.",
+        "threshold": 10000,
+        "type": "steps",  # This refers to steps goal
+    },
+    "workouts_10": {
+        "name": "10 Workouts Completed",
+        "description": "Complete 10 workouts in total.",
+        "threshold": 10,
+        "type": "workouts",
+    },
+    "calories_500": {
+        "name": "500 Calories Burned",
+        "description": "Burn 500 calories in a day.",
+        "threshold": 500,
+        "type": "calories",
+    },
+    "streak_7": {
+        "name": "7-Day Streak",
+        "description": "Complete a workout for 7 consecutive days.",
+        "threshold": 7,
+        "type": "streak",
+    },
+}
 
 # Tkinter GUI Setup
 root = tk.Tk()
@@ -248,5 +280,159 @@ lbl_quote.pack(pady=5)
 lb_entries = tk.Listbox(root, font=("Helvetica", 10), height=10, width=50, bd=2, relief="solid")
 lb_entries.pack(pady=10)
 
-# Run the Tkinter app
+def display_achievements():
+    # Create a new window or frame to show achievements
+    achievements_window = tk.Toplevel(root)
+    achievements_window.title("Achievements & Badges")
+    achievements_window.geometry("400x400")
+
+    # Label for header
+    header_label = tk.Label(achievements_window, text="🏆 Achievements and Badges", font=("Helvetica", 16, "bold"))
+    header_label.pack(pady=10)
+
+    # Display achievements and badges
+    for badge in user_data["badges"]:
+        achievement = next((ach for ach in achievements.values() if ach["name"] == badge), None)
+        if achievement:
+            badge_label = tk.Label(achievements_window, text=achievement["name"], font=("Helvetica", 12), bg="#f0f8ff")
+            badge_label.pack(pady=5)
+
+    # Add a "Close" button
+    close_button = tk.Button(achievements_window, text="Close", command=achievements_window.destroy)
+    close_button.pack(pady=10)
+    btn_achievements = tk.Button(button_frame, text="🏆 View Achievements", command=display_achievements, **btn_style)
+    btn_achievements.grid(row=2, column=1, padx=10, pady=10)
+def save_user_data():
+    with open("user_data.json", "w") as file:
+        json.dump(user_data, file, indent=4)
+
+def load_user_data():
+    try:
+        with open("user_data.json", "r") as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}  # Return empty data if no file exists
+# Function to create the calendar for the current month
+# Function to create the calendar for the current month
+# Function to create the calendar for the current month
+# Function to create the calendar for the current month
+
+import tkinter as tk
+from tkinter import ttk
+import calendar
+import datetime
+
+class FitnessTracker:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Fitness Tracker")
+
+        # Frame for Calendar
+        self.calendar_frame = tk.Frame(root, bg="white", padx=10, pady=10)
+        self.calendar_frame.pack(pady=10)
+
+        # Streak Display
+        self.streak_label = tk.Label(root, text="🔥 Current Streak: 0 | Best Streak: 0", font=("Arial", 12, "bold"), fg="#FF5733", bg="white")
+        self.streak_label.pack(pady=5)
+
+        # Button to Show/Hide Calendar
+        self.toggle_btn = tk.Button(root, text="📅 Show Calendar", command=self.toggle_calendar, font=("Arial", 12), bg="#4CAF50", fg="white", padx=10, pady=5)
+        self.toggle_btn.pack(pady=5)
+
+        self.calendar_visible = False  # Toggle state
+        self.streak_days = set()  # Store exercise days
+        self.current_streak = 0
+        self.best_streak = 0
+
+    def toggle_calendar(self):
+        """Toggle the visibility of the calendar."""
+        if self.calendar_visible:
+            self.calendar_frame.pack_forget()
+            self.toggle_btn.config(text="📅 Show Calendar")
+        else:
+            self.show_calendar()
+            self.toggle_btn.config(text="📅 Hide Calendar")
+        self.calendar_visible = not self.calendar_visible
+
+    def show_calendar(self):
+        """Display a calendar for the current month."""
+        for widget in self.calendar_frame.winfo_children():
+            widget.destroy()  # Clear previous widgets
+
+        today = datetime.date.today()
+        year, month = today.year, today.month
+
+        # Header with Month & Year
+        header = tk.Label(self.calendar_frame, text=f"{calendar.month_name[month]} {year}", font=("Arial", 14, "bold"), bg="white")
+        header.grid(row=0, column=0, columnspan=7, pady=5)
+
+        # Weekday Headers
+        days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        for i, day in enumerate(days):
+            tk.Label(self.calendar_frame, text=day, font=("Arial", 10, "bold"), bg="white").grid(row=1, column=i, padx=5, pady=5)
+
+        # Get calendar matrix
+        month_days = calendar.monthcalendar(year, month)
+
+        # Display days
+        for row_idx, week in enumerate(month_days):
+            for col_idx, day in enumerate(week):
+                if day == 0:
+                    continue  # Skip empty days
+
+                # Define button properties
+                btn_color = "#ffffff"  # Default color
+                if day == today.day:
+                    btn_color = "#ffcc00"  # Highlight today
+                elif day in self.streak_days:
+                    btn_color = "#4CAF50"  # Exercise days (green)
+
+                day_btn = tk.Button(self.calendar_frame, text=str(day), width=4, height=2, bg=btn_color, font=("Arial", 10, "bold"),
+                                    command=lambda d=day: self.toggle_streak(d))
+                day_btn.grid(row=row_idx + 2, column=col_idx, padx=2, pady=2)
+
+        # Update streak counter
+        self.update_streak()
+
+    def toggle_streak(self, day):
+        """Mark/unmark a day as an exercise streak."""
+        today = datetime.date.today()
+        selected_date = datetime.date(today.year, today.month, day)
+
+        if day in self.streak_days:
+            self.streak_days.remove(day)
+        else:
+            self.streak_days.add(day)
+
+        self.show_calendar()  # Refresh calendar to update colors
+
+    def update_streak(self):
+        """Calculate and update the streak counter."""
+        today = datetime.date.today()
+        days_sorted = sorted(self.streak_days)
+
+        # Check for consecutive streak
+        self.current_streak = 0
+        self.best_streak = max(self.best_streak, self.current_streak)
+
+        streak_count = 0
+        prev_day = None
+
+        for day in days_sorted:
+            current_date = datetime.date(today.year, today.month, day)
+            if prev_day and (current_date - prev_day).days == 1:
+                streak_count += 1
+            else:
+                streak_count = 1  # Reset if not consecutive
+
+            self.best_streak = max(self.best_streak, streak_count)
+            prev_day = current_date
+
+        self.current_streak = streak_count if today.day in self.streak_days else 0
+
+        # Update streak label
+        self.streak_label.config(text=f"🔥 Current Streak: {self.current_streak} | Best Streak: {self.best_streak}")
+    # Main Application
+root = tk.Tk()
+app = FitnessTracker(root)
 root.mainloop()
